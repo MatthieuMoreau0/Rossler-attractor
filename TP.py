@@ -20,7 +20,6 @@ import torch.nn.functional as F
 
 from speed_NN import *
 
-nclasses = 20
 
 class dataset(torch.utils.data.Dataset):
     def __init__(self,X_train,Y_train,S_train):
@@ -52,13 +51,13 @@ class Net(nn.Module):
 
 
 class NN_model():
-    def __init__(self, criterion=torch.nn.MSELoss()):
+    def __init__(self, criterion=torch.nn.MSELoss(), model_type = Net):
         # self.batch_size = batch_size        
         self.criterion = criterion
-        self.create_model()
+        self.create_model(model_type)
 
-    def create_model(self):
-        self.model = Net()
+    def create_model(self, model_type):
+        self.model = model_type()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
 
@@ -68,9 +67,9 @@ class NN_model():
         for epoch in range(epochs):
             list_loss = []
             for x,y,s in train_loader:
+                self.optimizer.zero_grad()
                 output = self.model(x)
                 loss = self.criterion(output, y)
-                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
                 list_loss.append(loss.detach().numpy())
@@ -135,8 +134,8 @@ def newton(f,jacob,x):
     
 if __name__ == '__main__':
 
-    Niter = 100000
-    delta_t = 1e-2
+    Niter = 400000
+    delta_t = 1e-3
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
     traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
@@ -147,7 +146,7 @@ if __name__ == '__main__':
     datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"))
     #model = NN_model()
     model = SpeedNN_model(lambda_speed=1)
-    model.train(datasetTrain, batch_size=100, epochs=20, shuffle = True)
+    model.train(datasetTrain, batch_size=100, epochs=15, shuffle = True)
     model.save_weight()
 
 

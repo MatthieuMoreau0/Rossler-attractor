@@ -41,7 +41,8 @@ class Rossler_model:
         list_trajectory = []
         for k in tqdm(range(self.nb_steps)):
             y, s = self.rosler_nn(x)
-            list_trajectory.append(y.detach().numpy())
+            if k%100 == 0 :
+                list_trajectory.append(y.detach().numpy())
             x = y
 
 
@@ -52,7 +53,7 @@ class Rossler_model:
         #save the trajectory in y.dat file 
     
 if __name__ == '__main__':
-    delta_t = 1e-2
+    delta_t = 1e-3
     ROSSLER = Rossler_model(delta_t)
 
     y = ROSSLER.full_traj()
