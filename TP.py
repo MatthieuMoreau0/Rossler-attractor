@@ -61,11 +61,14 @@ class NN_model():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
 
-    def train(self, datasetTrain, batch_size, epochs, shuffle = True):
+    def train(self, datasetTrain, batch_size, epochs, shuffle = True, test = None):
         train_loader = torch.utils.data.DataLoader(datasetTrain,
         batch_size=batch_size, shuffle=shuffle, num_workers=1)
+        val_loader = torch.utils.data.DataLoader(dataset_Test,
+        batch_size = 10000, num_workers =1)
         for epoch in range(epochs):
             list_loss = []
+            model.train()
             for x,y,s in train_loader:
                 self.optimizer.zero_grad()
                 output = self.model(x)
@@ -73,6 +76,13 @@ class NN_model():
                 loss.backward()
                 self.optimizer.step()
                 list_loss.append(loss.detach().numpy())
+            model.eval()
+            for x,y,s in val_loader:
+                output = self.model(x)
+                loss = self.criterion(output, y)
+                list_loss.append(loss.detach().numpy())
+            
+            
             print(f"Epoch {epoch} : {np.stack(list_loss).mean()}")
 
     def predict(self, x_eval):
@@ -134,19 +144,33 @@ def newton(f,jacob,x):
     
 if __name__ == '__main__':
 
-    Niter = 100000
-    delta_t = 5e-3
+    Niter = 400000
+    delta_t = 1e-3
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
     traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
     x_train = traj[:-1]
+    print(np.shape(x_train))
     y_train = traj[1:]
     s_train = speeds[:-1]
+    index = list(range(len(x_train)))
+    np.random.shuffle(index)
+
+    x_val = np.array(x_train)[index[:10000]]
+    x_val += np.random.normal(loc=0.0, scale=0.1, size=np.shape(x_val))   
+    x_train = np.array(x_train)[index[10000:]]
+    y_val = np.array(y_train)[index[:10000]]
+    y_train = np.array(y_train)[index[10000:]]
+    s_val = np.array(s_train)[index[:10000]]
+    s_train = np.array(s_train)[index[10000:]]
+
+    
     datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"))
+    datasetVal = dataset(x_val.astype("float32"),y_val.astype("float32"),s_val.astype("float32"))
     #model = NN_model()
-    model = SpeedNN_model(lambda_speed=0)
-    model.train(datasetTrain, batch_size=100, epochs=20, shuffle = True)
+    model = SpeedNN_model(lambda_speed=10.0)
+    model.train(datasetTrain, batch_size=100, epochs=20, shuffle = True, test = datasetVal)
     model.save_weight()
 
 
