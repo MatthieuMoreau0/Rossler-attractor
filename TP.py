@@ -133,7 +133,7 @@ def newton(f,jacob,x):
 if __name__ == '__main__':
 
     Niter = 100000
-    delta_t = 1e-3
+    delta_t = 1e-2
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
     traj,t = ROSSLER_MAP.full_traj(Niter, INIT)

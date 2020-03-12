@@ -41,6 +41,7 @@ class Rossler_model:
         for k in tqdm(range(self.nb_steps)):
             y = self.rosler_nn(x)
             list_trajectory.append(y.detach().numpy())
+            x = y
 
 
         return list_trajectory
@@ -50,7 +51,7 @@ class Rossler_model:
         #save the trajectory in y.dat file 
     
 if __name__ == '__main__':
-    delta_t = 1e-3
+    delta_t = 1e-2
     ROSSLER = Rossler_model(delta_t)
 
     y = ROSSLER.full_traj()
@@ -59,10 +60,11 @@ if __name__ == '__main__':
     Niter = ROSSLER.nb_steps
     traj,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
-
+    y = np.stack(y).reshape((-1,3))
+    print(y.shape)
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-    ax.plot(traj[:,0], traj[:,1], traj[:,2], c = 'b')
+    #ax.plot(traj[:,0], traj[:,1], traj[:,2], c = 'b')
     ax.plot(y[:,0], y[:,1], y[:,2], c = 'r')
     plt.show()
     # ROSSLER.save_traj(y)
