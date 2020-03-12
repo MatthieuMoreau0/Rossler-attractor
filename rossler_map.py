@@ -38,7 +38,11 @@ class RosslerMap:
         '''
         t = np.linspace(0, nb_steps * _.delta_t, nb_steps)
         f = solve_ivp(_.v_eq, [0, nb_steps * _.delta_t], init_pos, method='RK45', t_eval=t)
-        return np.moveaxis(f.y, -1, 0),t
+        positions = np.moveaxis(f.y, -1, 0)
+        speeds = np.zeros(positions.shape)
+        for i in range(nb_steps):
+            speeds[i] = _.v_eq(v=positions[i])
+        return positions,speeds,t
     
     def equilibrium(_):
         '''

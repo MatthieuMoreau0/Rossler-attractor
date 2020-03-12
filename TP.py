@@ -18,15 +18,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from speed_NN import *
+
 nclasses = 20
 
 class dataset(torch.utils.data.Dataset):
-    def __init__(self,X_train,Y_train):
+    def __init__(self,X_train,Y_train,S_train):
         self.X_train = X_train
         self.Y_train = Y_train
+        self.S_train = S_train
     
     def __getitem__(self, idx):
-        return self.X_train[idx], self.Y_train[idx]
+        return self.X_train[idx], self.Y_train[idx], self.S_train[idx]
     
     def __len__(self):
         return len(self.X_train)
@@ -64,7 +67,7 @@ class NN_model():
         batch_size=batch_size, shuffle=shuffle, num_workers=1)
         for epoch in range(epochs):
             list_loss = []
-            for x,y in train_loader:
+            for x,y,s in train_loader:
                 output = self.model(x)
                 loss = self.criterion(output, y)
                 self.optimizer.zero_grad()
@@ -136,12 +139,14 @@ if __name__ == '__main__':
     delta_t = 1e-2
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
-    traj,t = ROSSLER_MAP.full_traj(Niter, INIT)
+    traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
     x_train = traj[:-1]
     y_train = traj[1:]
-    datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"))
-    model = NN_model()
+    s_train = speeds[:-1]
+    datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"))
+    #model = NN_model()
+    model = SpeedNN_model(lambda_speed=1)
     model.train(datasetTrain, batch_size=100, epochs=20, shuffle = True)
     model.save_weight()
 

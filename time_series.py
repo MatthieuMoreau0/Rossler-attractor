@@ -21,7 +21,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+from speed_NN import *
 
 class Rossler_model:
     def __init__(self, delta_t):
@@ -29,8 +29,9 @@ class Rossler_model:
                               #if continuous model chose one <=1e-2
         self.nb_steps = int(10000//self.delta_t)
 
-        self.rosler_nn = Net()
-        state_dict = torch.load('model.pth')
+        self.rosler_nn = SpeedNet()#Net()
+        #state_dict = torch.load('model.pth')
+        state_dict = torch.load('SpeedNN_model.pth')
         self.rosler_nn.load_state_dict(state_dict)
 
     def full_traj(self,initial_condition=[-5.75, -1.6,  0.02]): 
@@ -39,7 +40,7 @@ class Rossler_model:
         x = torch.tensor(initial_condition)
         list_trajectory = []
         for k in tqdm(range(self.nb_steps)):
-            y = self.rosler_nn(x)
+            y, s = self.rosler_nn(x)
             list_trajectory.append(y.detach().numpy())
             x = y
 
@@ -58,7 +59,7 @@ if __name__ == '__main__':
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
     Niter = ROSSLER.nb_steps
-    traj,t = ROSSLER_MAP.full_traj(Niter, INIT)
+    traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
     y = np.stack(y).reshape((-1,3))
     print(y.shape)
