@@ -134,8 +134,8 @@ def newton(f,jacob,x):
     
 if __name__ == '__main__':
 
-    Niter = 400000
-    delta_t = 1e-3
+    Niter = 100000
+    delta_t = 5e-3
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
     traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
@@ -145,8 +145,8 @@ if __name__ == '__main__':
     s_train = speeds[:-1]
     datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"))
     #model = NN_model()
-    model = SpeedNN_model(lambda_speed=1)
-    model.train(datasetTrain, batch_size=100, epochs=15, shuffle = True)
+    model = SpeedNN_model(lambda_speed=0)
+    model.train(datasetTrain, batch_size=100, epochs=20, shuffle = True)
     model.save_weight()
 
 

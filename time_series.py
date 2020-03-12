@@ -27,7 +27,7 @@ class Rossler_model:
     def __init__(self, delta_t):
         self.delta_t = delta_t #if discrete model your delta_t
                               #if continuous model chose one <=1e-2
-        self.nb_steps = int(10000//self.delta_t)
+        self.nb_steps = int(5000//self.delta_t)
 
         self.rosler_nn = SpeedNet()#Net()
         #state_dict = torch.load('model.pth')
@@ -38,11 +38,11 @@ class Rossler_model:
         # run your model to generate the time series with nb_steps
         # just the y cordinate is necessary. 
         x = torch.tensor(initial_condition)
+        self.rosler_nn.eval()
         list_trajectory = []
         for k in tqdm(range(self.nb_steps)):
             y, s = self.rosler_nn(x)
-            if k%100 == 0 :
-                list_trajectory.append(y.detach().numpy())
+            list_trajectory.append(y.detach().numpy())
             x = y
 
 
@@ -53,7 +53,7 @@ class Rossler_model:
         #save the trajectory in y.dat file 
     
 if __name__ == '__main__':
-    delta_t = 1e-3
+    delta_t = 5e-3
     ROSSLER = Rossler_model(delta_t)
 
     y = ROSSLER.full_traj()

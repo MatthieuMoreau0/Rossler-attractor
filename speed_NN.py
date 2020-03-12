@@ -35,7 +35,7 @@ class SpeedNet(nn.Module):
         return newpos, speed
 
 class SpeedNN_model():
-    def __init__(self, criterion=torch.nn.MSELoss(), lambda_speed=0.01):
+    def __init__(self, criterion=torch.nn.SmoothL1Loss(), lambda_speed=0.01):
         # self.batch_size = batch_size        
         self.criterion = criterion
         self.lambda_speed = lambda_speed
@@ -52,11 +52,11 @@ class SpeedNN_model():
         for epoch in range(epochs):
             list_loss = []
             for x,y,s in train_loader:
+                self.optimizer.zero_grad()
                 output, speed = self.model(x)
                 loss_out = self.criterion(output, y)
                 loss_speed = self.criterion(speed, s)
                 loss = loss_out + self.lambda_speed*loss_speed
-                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
                 list_loss.append(loss.detach().numpy())
