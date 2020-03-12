@@ -1,6 +1,6 @@
 from TP import Net, NN_model
 
-
+import tqdm
 import numpy as np
 from numpy.linalg import qr, solve, norm
 from scipy.linalg import expm
@@ -24,21 +24,21 @@ import torch.nn.functional as F
 
 
 class Rossler_model:
-    def __int__(self, delta_t):
-        self.deta_t = delta_t #if discrete model your delta_t
+    def __init__(self, delta_t):
+        self.delta_t = delta_t #if discrete model your delta_t
                               #if continuous model chose one <=1e-2
-        self.nb_steps = 10000//self.delta_t
+        self.nb_steps = int(10000//self.delta_t)
 
         self.rosler_nn = Net()
-        state_dict = torch.load('model.h5')
-        self.model.load_state_dict(state_dict)
+        state_dict = torch.load('model.pth')
+        self.rosler_nn.load_state_dict(state_dict)
 
-    def full_traj(self,initial_condition=give_an_initial_condition): 
+    def full_traj(self,initial_condition=[-5.75, -1.6,  0.02]): 
         # run your model to generate the time series with nb_steps
         # just the y cordinate is necessary. 
         x = torch.tensor(initial_condition)
         list_trajectory = []
-        for k in range(self.nb_steps):
+        for k in tqdm(range(self.nb_steps)):
             y = self.rosler_nn(x)
             list_trajectory.append(y.detach().numpy())
 
@@ -46,13 +46,14 @@ class Rossler_model:
         return list_trajectory
 
     def save_traj(self,y):
+        print("NON")
         #save the trajectory in y.dat file 
     
 if __name__ == '__main__':
-
+    delta_t = 1e-3
     ROSSLER = Rossler_model(delta_t)
 
-    y = ROSSLER.full_traj([-5.75, -1.6,  0.02])
+    y = ROSSLER.full_traj()
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
     Niter = ROSSLER.nb_steps
