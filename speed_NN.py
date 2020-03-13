@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from TP import *
+from soft_dtw import SoftDTW
 
 class SpeedNet(nn.Module):
     def __init__(self, num_inputs=3, num_outputs = 3, delta=0.01):
@@ -39,7 +40,8 @@ class SpeedNet(nn.Module):
 class SpeedNN_model():
     def __init__(self, criterion=torch.nn.SmoothL1Loss(), lambda_speed=0.01):
         # self.batch_size = batch_size        
-        self.criterion = criterion
+        self.criterion1 = criterion
+        # self.criterion2= SoftDTW(gamma=1.0, normalize=True)
         self.lambda_speed = lambda_speed
         self.create_model()
 
@@ -68,9 +70,9 @@ class SpeedNN_model():
             for x,y,s in train_loader:
                 self.optimizer.zero_grad()
                 output, speed = self.model(x)
-                loss_out = self.criterion(output, y)
+                loss_out = self.criterion1(output, y)
                 speed=(output-x)/0.01
-                loss_speed = self.criterion(speed, s)
+                loss_speed = self.criterion1(speed, s)
                 loss = loss_out + self.lambda_speed*loss_speed
                 loss.backward()
                 self.optimizer.step()
@@ -82,8 +84,9 @@ class SpeedNN_model():
             self.model.eval()
             for x,y,s in val_loader:
                 output, speed = self.model(x)
-                loss_out = self.criterion(output, y)
-                loss_speed = self.criterion(speed, s)
+                loss_out = self.criterion1(output, y)
+                speed=(output-x)/0.01
+                loss_speed = self.criterion1(speed, s)
                 loss = loss_out + self.lambda_speed*loss_speed
                 val_list_loss_pos.append(loss_out.detach().numpy())
                 val_list_loss_speed.append(loss_speed.detach().numpy())

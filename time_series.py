@@ -27,7 +27,7 @@ class Rossler_model:
     def __init__(self, delta_t):
         self.delta_t = delta_t #if discrete model your delta_t
                               #if continuous model chose one <=1e-2
-        self.nb_steps = int(100//self.delta_t)
+        self.nb_steps = int(10000//self.delta_t)
 
         self.rosler_nn = SpeedNet() #Net()
         # self.rosler_nn = Net()
@@ -45,15 +45,15 @@ class Rossler_model:
             for k in tqdm(range(self.nb_steps)):
                 y, s = self.rosler_nn(x)
                 # y = self.rosler_nn(x)
-                if k%100 == 0 :
-                    list_trajectory.append(y.detach().numpy().reshape(-1))
+                # if k%100 == 0 :
+                list_trajectory.append(y.detach().numpy().reshape(-1))
                 x = y
 
 
         return list_trajectory
 
-    def save_traj(self,y):
-        print("NON")
+    def save_traj(self,y,file):
+        np.savetxt(file,y)
         #save the trajectory in y.dat file 
     
 if __name__ == '__main__':
@@ -69,9 +69,12 @@ if __name__ == '__main__':
     traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
 
-    result_loss = np.sum((traj[::100]-y)**2,axis = 1)
-    plt.plot(range(len(result_loss)),result_loss)
-    plt.show()
+    # result_loss = np.sum((traj[::100]-y)**2,axis = 1)
+    # plt.plot(range(len(result_loss)),result_loss)
+    # plt.show()
+
+    print(np.shape(traj))
+    print(np.shape(y))
 
     y = np.stack(y)
     # print(y.shape)
@@ -80,5 +83,6 @@ if __name__ == '__main__':
     ax.plot(traj[:,0], traj[:,1], traj[:,2], c = 'b')
     ax.plot(y[:,0], y[:,1], y[:,2], c = 'r')
     plt.show()
-    # ROSSLER.save_traj(y)
+    ROSSLER.save_traj(y,f"y_{delta_t}.dat")
+    ROSSLER.save_traj(traj,f"traj_{delta_t}.dat")
 
