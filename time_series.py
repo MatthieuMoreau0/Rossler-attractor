@@ -27,7 +27,7 @@ class Rossler_model:
     def __init__(self, delta_t):
         self.delta_t = delta_t #if discrete model your delta_t
                               #if continuous model chose one <=1e-2
-        self.nb_steps = int(1000//self.delta_t)
+        self.nb_steps = int(100//self.delta_t)
 
         self.rosler_nn = SpeedNet() #Net()
         # self.rosler_nn = Net()
@@ -57,7 +57,7 @@ class Rossler_model:
         #save the trajectory in y.dat file 
     
 if __name__ == '__main__':
-    delta_t = 1e-3
+    delta_t = 1e-2
     ROSSLER = Rossler_model(delta_t)
 
     y = ROSSLER.full_traj()

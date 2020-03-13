@@ -61,7 +61,7 @@ class NN_model():
 
     def create_model(self, model_type):
         self.model = model_type()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.00001)
 
 
     def train(self, datasetTrain, batch_size, epochs, shuffle = True, test = None):
@@ -69,10 +69,14 @@ class NN_model():
         batch_size=batch_size, shuffle=shuffle, num_workers=1)
         val_loader = torch.utils.data.DataLoader(test,
         batch_size = 10000, num_workers =1)
+        self.model = self.model.cuda()
         for epoch in range(epochs):
             list_loss = []
             self.model.train()
             for x,y,s in train_loader:
+                x = x.cuda()
+                y = y.cuda()
+                s = s.cuda()
                 self.optimizer.zero_grad()
                 output = self.model(x)
                 loss = self.criterion(output, y)
@@ -113,9 +117,9 @@ def lyapunov_exponent(traj, jacobian, max_it=1000, delta_t=1e-3):
     for i in range(max_it):
         jacob = jacobian(traj[i,:])
         #WARNING this is true for the jacobian of the continuous system!
-        w_next = np.dot(expm(jacob * delta_t),w) 
+        # w_next = np.dot(expm(jacob * delta_t),w) 
         #if delta_t is small you can use:
-        #w_next = np.dot(np.eye(n)+jacob * delta_t,w)
+        w_next = np.dot(np.eye(n)+jacob * delta_t,w)
     
         w_next, r_next = qr(w_next)
 
@@ -148,7 +152,7 @@ def newton(f,jacob,x):
 if __name__ == '__main__':
 
     Niter = 400000
-    delta_t = 1e-3
+    delta_t = 1e-2
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
     traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
@@ -169,12 +173,16 @@ if __name__ == '__main__':
     s_val = np.array(s_train)[index[:10000]]
     s_train = np.array(s_train)[index[10000:]]
 
+    # print(np.linalg.norm(x_train+delta_t*s_train-y_train,axis=1).shape)
+
+    # print(np.mean(np.linalg.norm(x_train+delta_t*s_train-y_train,axis=1)))
+
     
     datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"))
     datasetVal = dataset(x_val.astype("float32"),y_val.astype("float32"),s_val.astype("float32"))
-    # model = NN_model()
-    model = SpeedNN_model(lambda_speed=1)
-    model.train(datasetTrain, batch_size=100, epochs=20, shuffle = True, test = datasetVal)
+    #model = NN_model()
+    model = SpeedNN_model(lambda_speed=0.01)
+    model.train(datasetTrain, batch_size=250, epochs=20, shuffle = True, test = datasetVal)
     model.save_weight()
 
 

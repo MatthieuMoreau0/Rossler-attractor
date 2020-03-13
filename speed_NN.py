@@ -14,27 +14,26 @@ import torch.nn.functional as F
 from TP import *
 
 class SpeedNet(nn.Module):
-    def __init__(self, num_inputs=3, num_outputs = 3):
+    def __init__(self, num_inputs=3, num_outputs = 3, delta=0.01):
         super().__init__()
-        self.LinearSpeed_1 = nn.Linear(num_inputs,15)
-        self.LinearSpeed_2 = nn.Linear(15,num_outputs)
-        # self.LinearSpeed_3 = nn.Linear(10,num_outputs*2)
-        # self.LinearNewPos = nn.Linear(num_inputs*2,num_outputs)
+        self.LinearSpeed_1 = nn.Linear(num_inputs,200)
+        self.LinearSpeed_2 = nn.Linear(200,500)
+        self.LinearSpeed_3 = nn.Linear(500,num_outputs)
+        # self.LinearNewPos = nn.Linear(503,num_outputs)
         # self.LinearNewPos_2 = nn.Linear(num_inputs*)
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
+        self.delta=delta
         # self.function = torch.nn.LeakyReLU()
 
     def forward(self, input):
         input = input.view(-1,self.num_inputs)
         aux = F.elu(self.LinearSpeed_1(input))
-        aux = self.LinearSpeed_2(aux)
-        speed = aux
-        newpos = aux * torch.tensor(1e-3)
-        # newpos = aux[:,:3]
-        # speed = aux[:,3:]
-        # state = torch.cat([input, speed], dim=1)
-        # newpos = self.LinearNewPos(state)
+        aux = F.elu(self.LinearSpeed_2(aux))
+        speed = self.LinearSpeed_3(aux)
+        # newpos = input+self.delta*aux
+        # aux = torch.cat([F.elu(aux), speed], dim=1)
+        newpos = speed
         return newpos, speed
 
 class SpeedNN_model():
@@ -46,7 +45,7 @@ class SpeedNN_model():
 
     def create_model(self):
         self.model = SpeedNet()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.00001)
 
 
     def train(self, datasetTrain, batch_size, epochs, shuffle = True, test = None):
@@ -70,6 +69,7 @@ class SpeedNN_model():
                 self.optimizer.zero_grad()
                 output, speed = self.model(x)
                 loss_out = self.criterion(output, y)
+                speed=(output-x)/0.01
                 loss_speed = self.criterion(speed, s)
                 loss = loss_out + self.lambda_speed*loss_speed
                 loss.backward()
