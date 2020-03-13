@@ -38,14 +38,17 @@ class dataset(torch.utils.data.Dataset):
 class Net(nn.Module):
     def __init__(self, num_inputs=3, num_outputs = 3):
         super().__init__()
-        self.Linear1 = nn.Linear(num_inputs,num_outputs)
+        self.Linear1 = nn.Linear(num_inputs,10)
+        self.Linear2 = nn.Linear(10,num_outputs)
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         # self.function = torch.nn.LeakyReLU()
 
     def forward(self, input):
         input = input.view(-1,self.num_inputs)
-        output = self.Linear1(input)
+        # output = self.Linear1(input)
+        aux = F.elu(self.Linear1(input))
+        output = self.Linear2(aux)
         return output
 
 
@@ -64,11 +67,11 @@ class NN_model():
     def train(self, datasetTrain, batch_size, epochs, shuffle = True, test = None):
         train_loader = torch.utils.data.DataLoader(datasetTrain,
         batch_size=batch_size, shuffle=shuffle, num_workers=1)
-        val_loader = torch.utils.data.DataLoader(dataset_Test,
+        val_loader = torch.utils.data.DataLoader(test,
         batch_size = 10000, num_workers =1)
         for epoch in range(epochs):
             list_loss = []
-            model.train()
+            self.model.train()
             for x,y,s in train_loader:
                 self.optimizer.zero_grad()
                 output = self.model(x)
@@ -76,7 +79,7 @@ class NN_model():
                 loss.backward()
                 self.optimizer.step()
                 list_loss.append(loss.detach().numpy())
-            model.eval()
+            self.model.eval()
             for x,y,s in val_loader:
                 output = self.model(x)
                 loss = self.criterion(output, y)
@@ -155,6 +158,7 @@ if __name__ == '__main__':
     y_train = traj[1:]
     s_train = speeds[:-1]
     index = list(range(len(x_train)))
+    # index = index[10000:]
     np.random.shuffle(index)
 
     x_val = np.array(x_train)[index[:10000]]
@@ -168,8 +172,8 @@ if __name__ == '__main__':
     
     datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"))
     datasetVal = dataset(x_val.astype("float32"),y_val.astype("float32"),s_val.astype("float32"))
-    #model = NN_model()
-    model = SpeedNN_model(lambda_speed=10.0)
+    # model = NN_model()
+    model = SpeedNN_model(lambda_speed=1)
     model.train(datasetTrain, batch_size=100, epochs=20, shuffle = True, test = datasetVal)
     model.save_weight()
 

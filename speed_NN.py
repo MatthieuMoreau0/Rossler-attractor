@@ -17,9 +17,9 @@ class SpeedNet(nn.Module):
     def __init__(self, num_inputs=3, num_outputs = 3):
         super().__init__()
         self.LinearSpeed_1 = nn.Linear(num_inputs,15)
-        self.LinearSpeed_2 = nn.Linear(15,10)
-        self.LinearSpeed_3 = nn.Linear(10,num_outputs*2)
-        self.LinearNewPos = nn.Linear(num_inputs*2,num_outputs)
+        self.LinearSpeed_2 = nn.Linear(15,num_outputs)
+        # self.LinearSpeed_3 = nn.Linear(10,num_outputs*2)
+        # self.LinearNewPos = nn.Linear(num_inputs*2,num_outputs)
         # self.LinearNewPos_2 = nn.Linear(num_inputs*)
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
@@ -28,10 +28,11 @@ class SpeedNet(nn.Module):
     def forward(self, input):
         input = input.view(-1,self.num_inputs)
         aux = F.elu(self.LinearSpeed_1(input))
-        aux = F.elu(self.LinearSpeed_2(aux))
-        aux = self.LinearSpeed_3(aux)
-        newpos = aux[:,:3]
-        speed = aux[:,3:]
+        aux = self.LinearSpeed_2(aux)
+        speed = aux
+        newpos = aux * torch.tensor(1e-3)
+        # newpos = aux[:,:3]
+        # speed = aux[:,3:]
         # state = torch.cat([input, speed], dim=1)
         # newpos = self.LinearNewPos(state)
         return newpos, speed
@@ -97,6 +98,6 @@ class SpeedNN_model():
         state_dict = self.model.state_dict()
         torch.save(state_dict, name_input)
 
-    def load(self,name_weights='SpeedNN_model.h5'):
+    def load(self,name_weights='SpeedNN_model.pth'):
         state_dict = torch.load(name_weights)
         self.model.load_state_dict(state_dict)
