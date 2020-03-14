@@ -83,6 +83,7 @@ if __name__ == '__main__':
     ax.plot(traj[:,0], traj[:,1], traj[:,2], c = 'b')
     ax.plot(y[:,0], y[:,1], y[:,2], c = 'r')
     plt.show()
+    # traj is the true trajectory, y the simulated one
     ROSSLER.save_traj(y,f"y_{delta_t}.dat")
     ROSSLER.save_traj(traj,f"traj_{delta_t}.dat")
 

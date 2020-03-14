@@ -132,7 +132,7 @@ def lyapunov_exponent(traj, jacobian, max_it=1000, delta_t=1e-3):
         rs.append(r_next)
         w = w_next
         if i//(max_it/100)>chk:
-            print(i//(max_it/100))
+            #print(i//(max_it/100))
             chk +=1
     
     return  np.mean(np.log(rs), axis=0) / delta_t
