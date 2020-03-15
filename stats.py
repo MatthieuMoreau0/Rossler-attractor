@@ -12,7 +12,7 @@ def draw_histogram(traj,y):
     traj_coord=traj[:,i]
 
     #win_width=np.maximum(np.max(coord),np.max(traj_coord),5)-np.minimum(np.min(coord),np.min(traj_coord))
-    win_width = max(np.max(coord),np.max(traj_coord),5) - min(np.min(coord),np.min(traj_coord))
+    win_width = max(np.max(coord),np.max(traj_coord)) - min(np.min(coord),np.min(traj_coord))
     nb_bins=50
 
     coord=coord[np.where(np.abs(coord)<win_width)]
@@ -31,7 +31,7 @@ def draw_histogram(traj,y):
     plt.ylabel('Occurences')
   plt.show()
 
-def time_correlations(gt_traj, sim_traj, T):
+def joint_distrib(gt_traj, sim_traj, T):
   '''
   Plots the joint distributions of (w(t),w(t+T)) (for each axis) for w in {traj, y}
   '''
@@ -55,6 +55,32 @@ def time_correlations(gt_traj, sim_traj, T):
     fig.suptitle(f"Time correlation for the {labels[i]} coordinate, T={T}")
 
   plt.show()
+
+def time_correlations(gt_traj, sim_traj, T_list=[5,10,50,100,200,500,1000]):
+  '''
+  Plots for each dimension the evolution of the correlation between w(t) and w(t=T) as T increases
+  '''
+  labels = ["x", "y", "z"]
+  for i in range(3):
+    gt_correls = []
+    sim_correls = []
+    for T in T_list:
+      sim_coords = sim_traj[:-T,i]
+      gt_coords = gt_traj[:-T,i]
+      translat_sim_coords = sim_traj[T:,i]
+      translat_gt_coords = gt_traj[T:,i]
+
+      gt_correls.append(np.corrcoef(gt_coords, translat_gt_coords)[0,1])
+      sim_correls.append(np.corrcoef(sim_coords, translat_sim_coords)[0,1])
+
+    plt.figure()
+    plt.plot(T_list, sim_correls, color='r', label="Simulation correlations")
+    plt.plot(T_list, gt_correls, color='b', label="Physical system evolution")
+    plt.xlabel('T')
+    plt.ylabel('Correlation')
+    plt.legend()
+  plt.show()
+
 
 
 def empiric_lyapounov(traj, max_it, delta_t):
@@ -149,11 +175,11 @@ if __name__ == '__main__':
     print("Done")
     
     print("Drawing time correlation distribution..")
-    time_correlations(traj, y, 100) # T is chosen at random here, other values should be tested
+    time_correlations(traj, y, T_list=np.arange(10,1000,50)) # T is chosen at random here, other values should be tested
     print("Done")
 
     # Right thing to do: compare two generated trajectories (instead of a simulation versus the ground truth)
-    print("Computing Lyapounov")
+    '''print("Computing Lyapounov")
     Niter = 400000
     delta_t = 1e-2
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
@@ -166,7 +192,7 @@ if __name__ == '__main__':
 
     print(('Computing FFT'))
     plot_fourier(traj, y)
-    print('Done')
+    print('Done')'''
 
 #stats intéressantes : max distances entre deux points (au même instant, i.e. erreur de prediction)
 #                     - max min distances, les points des deux surfaces les plus éloignés
