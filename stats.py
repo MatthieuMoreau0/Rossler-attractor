@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from TP import *
 from rossler_map import *
+from dtw import *
 
 
 def draw_histogram(traj,y):
@@ -162,39 +163,56 @@ def plot_traj(gt_traj, sim_traj):
   ax.plot(sim_traj[:,0], sim_traj[:,1], sim_traj[:,2], c = 'r')
   plt.show()
 
+def dtws(gt_traj, sim_traj):
+  gt_traj=gt_traj[:,0]
+  sim_traj=sim_traj[:,0]
+  alignment = dtw(sim_traj, gt_traj, keep_internals=True)
+
+  ## Display the warping curve, i.e. the alignment curve
+  alignment.plot(type="alignment")
+  a=alignment.index1
+  b=alignment.index2
+  plt.plot(np.cumsum(alignment.costMatrix[(a,b)]))
+  plt.show()
+
+
 if __name__ == '__main__':
     print("Loading... ")
     # y=np.loadtxt("y_0.01_smoothl1.dat")
-    y=np.loadtxt("y_0.01.dat")
+    y=np.loadtxt("y_0.01_smoothl1.dat")
     # traj=np.loadtxt("traj_0.01_smoothl1.dat")
-    traj=np.loadtxt("traj_0.01.dat")
+    traj=np.loadtxt("traj_0.01_smoothl1.dat")
     print("DONE")
 
     #plot_traj(traj,y)
     
-    print("Drawing histograms..")
-    draw_histogram(traj,y)
-    print("Done")
+    # print("Drawing histograms..")
+    # draw_histogram(traj,y)
+    # print("Done")
     
-    print("Drawing time correlation distribution..")
-    time_correlations(traj, y, T_list=np.arange(10,1000,50)) # T is chosen at random here, other values should be tested
-    print("Done")
+    # print("Drawing time correlation distribution..")
+    # time_correlations(traj, y, 100) # T is chosen at random here, other values should be tested
+    # print("Done")
 
-    # Right thing to do: compare two generated trajectories (instead of a simulation versus the ground truth)
-    '''print("Computing Lyapounov")
-    Niter = 400000
-    delta_t = 1e-2
-    ROSSLER_MAP = RosslerMap(delta_t=delta_t)
-    lyap = lyapunov_exponent(traj, ROSSLER_MAP.jacobian, max_it=Niter, delta_t=delta_t)[0]
-    print(f'Largest lyapounov coeffiscient of the physical system: {lyap}')
-    print("Plotting the deivation vs Lyapounov")
-    # Start after 1 to make sure the starting points are different
-    compare_lyapounov(traj[10:10000], lyap, y[10:10000], delta_t=delta_t) # We have to focus on the start of the trajectories to avoid overfloat
-    print("Done")
+    # # Right thing to do: compare two generated trajectories (instead of a simulation versus the ground truth)
+    # print("Computing Lyapounov")
+    # Niter = 400000
+    # delta_t = 1e-2
+    # ROSSLER_MAP = RosslerMap(delta_t=delta_t)
+    # lyap = lyapunov_exponent(traj, ROSSLER_MAP.jacobian, max_it=Niter, delta_t=delta_t)[0]
+    # print(f'Largest lyapounov coeffiscient of the physical system: {lyap}')
+    # print("Plotting the deivation vs Lyapounov")
+    # # Start after 1 to make sure the starting points are different
+    # compare_lyapounov(traj[10:10000], lyap, y[10:10000], delta_t=delta_t) # We have to focus on the start of the trajectories to avoid overfloat
+    # print("Done")
 
-    print(('Computing FFT'))
-    plot_fourier(traj, y)
-    print('Done')'''
+    # print(('Computing FFT'))
+    # plot_fourier(traj, y)
+    # print('Done')
+
+    print("Computing DTW...")
+    dtws(traj[:10000],y[:10000]) #ran on 10000 first steps
+    print('Done')
 
 #stats intéressantes : max distances entre deux points (au même instant, i.e. erreur de prediction)
 #                     - max min distances, les points des deux surfaces les plus éloignés

@@ -12,7 +12,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from TP import *
-from soft_dtw import SoftDTW
 
 class SpeedNet(nn.Module):
     def __init__(self, num_inputs=3, num_outputs = 3, delta=0.01):
@@ -41,7 +40,6 @@ class SpeedNN_model():
     def __init__(self, criterion=torch.nn.SmoothL1Loss(), lambda_speed=0.01):
         # self.batch_size = batch_size        
         self.criterion1 = criterion
-        # self.criterion2= SoftDTW(gamma=1.0, normalize=True)
         self.lambda_speed = lambda_speed
         self.create_model()
 
@@ -71,6 +69,7 @@ class SpeedNN_model():
                 self.optimizer.zero_grad()
                 output, speed = self.model(x)
                 loss_out = self.criterion1(output, y)
+                # TODO: change this to compute speed with variable delta, here delta = 0.01 hardcoded
                 speed=(output-x)/0.01
                 loss_speed = self.criterion1(speed, s)
                 loss = loss_out + self.lambda_speed*loss_speed
