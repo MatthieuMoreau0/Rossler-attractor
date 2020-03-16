@@ -42,7 +42,10 @@ class RosslerMap:
         speeds = np.zeros(positions.shape)
         for i in range(nb_steps):
             speeds[i] = _.v_eq(v=positions[i])
-        return positions,speeds,t
+        jacobians = np.zeros((positions.shape[0], 3,3))
+        for i in range(positions.shape[0]):
+            jacobians[i] = _.jacobian(positions[i])
+        return positions,speeds,jacobians,t
     
     def equilibrium(_):
         '''

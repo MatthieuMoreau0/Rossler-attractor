@@ -49,8 +49,22 @@ class Rossler_model:
                 list_trajectory.append(y.detach().numpy().reshape(-1))
                 x = y
 
-
         return list_trajectory
+
+    def jacobian(self, input_):
+        input_.requires_grad = True
+        output, speed = self.rosler_nn.forward(input_)
+
+        jacobian = np.zeros((3,3))
+
+        for i in range(3): # iterate over each output dimension
+            dim_score = output[0][i]
+            dim_score.backward(retain_graph=True)
+            gradients = input_.grad
+            jacobian[i] = gradients.data
+
+        return jacobian
+
 
     def save_traj(self,y,file):
         np.savetxt(file,y)
@@ -66,8 +80,7 @@ if __name__ == '__main__':
     Niter = ROSSLER.nb_steps
 
     print(Niter)
-    traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
-
+    traj,speeds,jacobians,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
     # result_loss = np.sum((traj[::100]-y)**2,axis = 1)
     # plt.plot(range(len(result_loss)),result_loss)
@@ -84,6 +97,6 @@ if __name__ == '__main__':
     ax.plot(y[:,0], y[:,1], y[:,2], c = 'r')
     plt.show()
     # traj is the true trajectory, y the simulated one
-    ROSSLER.save_traj(y,f"y_{delta_t}.dat")
-    ROSSLER.save_traj(traj,f"traj_{delta_t}.dat")
+    ROSSLER.save_traj(y,f"y_{delta_t}_jac.dat")
+    ROSSLER.save_traj(traj,f"traj_{delta_t}_jac.dat")
 

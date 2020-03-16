@@ -37,10 +37,11 @@ class SpeedNet(nn.Module):
         return newpos, speed
 
 class SpeedNN_model():
-    def __init__(self, criterion=torch.nn.SmoothL1Loss(), lambda_speed=0.01):
+    def __init__(self, criterion=torch.nn.SmoothL1Loss(), lambda_speed=0.01, lambda_jacob=None):
         # self.batch_size = batch_size        
         self.criterion1 = criterion
         self.lambda_speed = lambda_speed
+        self.lambda_jacob = lambda_jacob
         self.create_model()
 
     def create_model(self):
@@ -65,14 +66,30 @@ class SpeedNN_model():
             val_list_loss_pos = []
 
             self.model.train()
-            for x,y,s in train_loader:
+            for x,y,s,j in train_loader:
+                if self.lambda_jacob is not None: x.requires_grad = True 
                 self.optimizer.zero_grad()
                 output, speed = self.model(x)
                 loss_out = self.criterion1(output, y)
                 # TODO: change this to compute speed with variable delta, here delta = 0.01 hardcoded
-                speed=(output-x)/0.01
-                loss_speed = self.criterion1(speed, s)
-                loss = loss_out + self.lambda_speed*loss_speed
+                loss = loss_out
+                if self.lambda_speed is not None:
+                    speed=(output-x)/0.01
+                    loss_speed = self.criterion1(speed, s)
+                    loss += self.lambda_speed*loss_speed
+                if self.lambda_jacob is not None:
+                    #print(j.shape)
+                    jacobian = torch.zeros((x.shape[0],3,3))
+                    for i in range(3): # iterate over each output dimension
+                        dim_score = output[0][i]
+                        dim_score.backward(retain_graph=True)
+                        gradients = x.grad
+                        #print(gradients.shape)
+                        jacobian[:,i,:] = gradients.data
+                    loss_jacob = self.criterion1(jacobian, j)
+                    loss += self.lambda_jacob * loss_jacob
+                    x.requires_grad = False # remove grad from x to avoid modifying the input
+
                 loss.backward()
                 self.optimizer.step()
                 list_loss_pos.append(loss_out.detach().numpy())
@@ -81,7 +98,7 @@ class SpeedNN_model():
             print(f"Epoch {epoch} : Loss Total {np.stack(list_loss).mean()} Loss Pos {np.mean(list_loss_pos)} Loss Speed {np.mean(list_loss_speed)}")
 
             self.model.eval()
-            for x,y,s in val_loader:
+            for x,y,s,j in val_loader:
                 output, speed = self.model(x)
                 loss_out = self.criterion1(output, y)
                 speed=(output-x)/0.01

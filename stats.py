@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from TP import *
 from rossler_map import *
-from dtw import *
 
 
 def draw_histogram(traj,y):

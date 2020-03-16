@@ -19,16 +19,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from speed_NN import *
+from stats import *
 
 
 class dataset(torch.utils.data.Dataset):
-    def __init__(self,X_train,Y_train,S_train):
+    def __init__(self,X_train,Y_train,S_train,J_train):
         self.X_train = X_train
         self.Y_train = Y_train
         self.S_train = S_train
+        self.J_train = J_train
     
     def __getitem__(self, idx):
-        return self.X_train[idx], self.Y_train[idx], self.S_train[idx]
+        return self.X_train[idx], self.Y_train[idx], self.S_train[idx], self.J_train[idx]
     
     def __len__(self):
         return len(self.X_train)
@@ -155,33 +157,36 @@ if __name__ == '__main__':
     delta_t = 1e-2
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     INIT = np.array([-5.75, -1.6,  0.02])
-    traj,speeds,t = ROSSLER_MAP.full_traj(Niter, INIT)
+    traj,speeds,jacobians,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
     x_train = traj[:-1]
     print(np.shape(x_train))
     y_train = traj[1:]
     s_train = speeds[:-1]
+    j_train = jacobians[:-1]
     index = list(range(len(x_train)))
     # index = index[10000:]
     np.random.shuffle(index)
 
     x_val = np.array(x_train)[index[:10000]]
-    x_val += np.random.normal(loc=0.0, scale=0.1, size=np.shape(x_val))   
+    x_val += np.random.normal(loc=0.0, scale=0.1, size=np.shape(x_val))
     x_train = np.array(x_train)[index[10000:]]
     y_val = np.array(y_train)[index[:10000]]
     y_train = np.array(y_train)[index[10000:]]
     s_val = np.array(s_train)[index[:10000]]
     s_train = np.array(s_train)[index[10000:]]
+    j_val = np.array(j_train)[index[:10000]]
+    j_train = np.array(j_train)[index[10000:]]
 
     # print(np.linalg.norm(x_train+delta_t*s_train-y_train,axis=1).shape)
 
     # print(np.mean(np.linalg.norm(x_train+delta_t*s_train-y_train,axis=1)))
 
     
-    datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"))
-    datasetVal = dataset(x_val.astype("float32"),y_val.astype("float32"),s_val.astype("float32"))
+    datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"),j_train.astype("float32"))
+    datasetVal = dataset(x_val.astype("float32"),y_val.astype("float32"),s_val.astype("float32"),j_val.astype("float32"))
     #model = NN_model()
-    model = SpeedNN_model(lambda_speed=0.01)
+    model = SpeedNN_model(lambda_jacob=0.01)
     model.train(datasetTrain, batch_size=250, epochs=20, shuffle = True, test = datasetVal)
     model.save_weight()
 
@@ -197,6 +202,8 @@ if __name__ == '__main__':
     print("equilibrium state :", fix_point, ", error : ", error)
     
     lyap = lyapunov_exponent(traj, ROSSLER_MAP.jacobian, max_it=Niter, delta_t=delta_t)
-    print("Lyapunov Exponents :", lyap, "with delta t =", delta_t)
+    #empiric_lyap = empiric_lyapounov(traj, max_it=Niter, delta_t=delta_t)
+    print("True Lyapunov Exponents :", lyap, "with delta t =", delta_t)
+    #print("Simulation Lyapunov Exponents :", empiric_lyap, "with delta t =", delta_t)
 
     plt.show()
