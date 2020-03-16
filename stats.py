@@ -11,8 +11,7 @@ def draw_histogram(traj,y):
     coord=y[:,i]
     traj_coord=traj[:,i]
 
-    #win_width=np.maximum(np.max(coord),np.max(traj_coord),5)-np.minimum(np.min(coord),np.min(traj_coord))
-    win_width = max(np.max(coord),np.max(traj_coord),5) - min(np.min(coord),np.min(traj_coord))
+    win_width=np.maximum(np.max(coord),np.max(traj_coord))-np.minimum(np.min(coord),np.min(traj_coord))
     nb_bins=50
 
     coord=coord[np.where(np.abs(coord)<win_width)]
@@ -138,8 +137,10 @@ def plot_traj(gt_traj, sim_traj):
 
 if __name__ == '__main__':
     print("Loading... ")
-    y=np.loadtxt("y_0.01_smoothl1.dat")
-    traj=np.loadtxt("traj_0.01_smoothl1.dat")
+    # y=np.loadtxt("y_0.01_smoothl1.dat")
+    y=np.loadtxt("y_0.01.dat")
+    # traj=np.loadtxt("traj_0.01_smoothl1.dat")
+    traj=np.loadtxt("traj_0.01.dat")
     print("DONE")
 
     #plot_traj(traj,y)

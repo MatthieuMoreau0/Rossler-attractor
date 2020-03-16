@@ -54,7 +54,7 @@ class Net(nn.Module):
 
 
 class NN_model():
-    def __init__(self, criterion=torch.nn.MSELoss(), model_type = Net):
+    def __init__(self, criterion=torch.nn.SmoothL1Loss(), model_type = Net):
         # self.batch_size = batch_size        
         self.criterion = criterion
         self.create_model(model_type)
