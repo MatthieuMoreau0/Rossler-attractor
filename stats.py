@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from TP import *
 from rossler_map import *
+from dtw import *
 
 
 def draw_histogram(traj,y):
@@ -178,12 +179,13 @@ def dtws(gt_traj, sim_traj):
 if __name__ == '__main__':
     print("Loading... ")
     # y=np.loadtxt("y_0.01_smoothl1.dat")
-    y=np.loadtxt("y_0.01_smoothl1.dat")
+    # y=np.loadtxt("y_0.01_smoothl1.dat")
+    y = np.loadtxt('y_0.01_jac.dat')
     # traj=np.loadtxt("traj_0.01_smoothl1.dat")
     traj=np.loadtxt("traj_0.01_smoothl1.dat")
     print("DONE")
 
-    #plot_traj(traj,y)
+    plot_traj(traj,y)
     
     # print("Drawing histograms..")
     # draw_histogram(traj,y)

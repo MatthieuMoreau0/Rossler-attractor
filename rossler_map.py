@@ -44,7 +44,7 @@ class RosslerMap:
             speeds[i] = _.v_eq(v=positions[i])
         jacobians = np.zeros((positions.shape[0], 3,3))
         for i in range(positions.shape[0]):
-            jacobians[i] = _.jacobian(positions[i])
+            jacobians[i] = _.jacobian(positions[i]) * _.delta_t + np.eye(3) # Converting to discrete jacobian
         return positions,speeds,jacobians,t
     
     def equilibrium(_):
