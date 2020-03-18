@@ -22,7 +22,13 @@ from speed_NN import *
 
 
 class dataset(torch.utils.data.Dataset):
+    '''
+    Loader for the pyotorch models.
+    '''
     def __init__(self,X_train,Y_train,S_train,J_train):
+        '''
+        Expects numpy arrays
+        '''
         self.X_train = X_train
         self.Y_train = Y_train
         self.S_train = S_train
@@ -37,17 +43,18 @@ class dataset(torch.utils.data.Dataset):
 
 
 class Net(nn.Module):
+    '''
+    Simple feed-forward Nueral Network
+    '''
     def __init__(self, num_inputs=3, num_outputs = 3):
         super().__init__()
         self.Linear1 = nn.Linear(num_inputs,10)
         self.Linear2 = nn.Linear(10,num_outputs)
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
-        # self.function = torch.nn.LeakyReLU()
 
     def forward(self, input):
         input = input.view(-1,self.num_inputs)
-        # output = self.Linear1(input)
         aux = F.elu(self.Linear1(input))
         output = self.Linear2(aux)
         return output
@@ -152,6 +159,8 @@ def newton(f,jacob,x):
     
 if __name__ == '__main__':
 
+    ### Sample train and validation tests ###
+
     Niter = 400000
     delta_t = 1e-2
     ROSSLER_MAP = RosslerMap(delta_t=delta_t)
@@ -159,14 +168,14 @@ if __name__ == '__main__':
     traj,speeds,jacobians,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
     x_train = traj[:-1]
-    print(np.shape(x_train))
     y_train = traj[1:]
     s_train = speeds[:-1]
     j_train = jacobians[:-1]
-    index = list(range(len(x_train)))
-    # index = index[10000:]
-    np.random.shuffle(index)
 
+    # Shuffle indexes to avoid over-fitting the end of the trajectory
+    index = list(range(len(x_train)))
+    np.random.shuffle(index)
+    # Split train and test
     x_val = np.array(x_train)[index[:10000]]
     x_val += np.random.normal(loc=0.0, scale=0.1, size=np.shape(x_val))
     x_train = np.array(x_train)[index[10000:]]
@@ -176,24 +185,23 @@ if __name__ == '__main__':
     s_train = np.array(s_train)[index[10000:]]
     j_val = np.array(j_train)[index[:10000]]
     j_train = np.array(j_train)[index[10000:]]
-
-    # print(np.linalg.norm(x_train+delta_t*s_train-y_train,axis=1).shape)
-
-    # print(np.mean(np.linalg.norm(x_train+delta_t*s_train-y_train,axis=1)))
-
     
     datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"),j_train.astype("float32"))
     datasetVal = dataset(x_val.astype("float32"),y_val.astype("float32"),s_val.astype("float32"),j_val.astype("float32"))
-    #model = NN_model()
+
+    ### Define and train model ###
+
     model = SpeedNN_model(lambda_jacob=0.1)
     model.train(datasetTrain, batch_size=250, epochs=10, shuffle = True, test = datasetVal)
     model.save_weight()
 
-
+    ### Plot the sampled trajectory ###
     
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(traj[:,0], traj[:,1], traj[:,2])
+
+    ### Plot physical quantities ###
     
     fix_point = newton(ROSSLER_MAP.v_eq,ROSSLER_MAP.jacobian,INIT)
 
@@ -201,8 +209,6 @@ if __name__ == '__main__':
     print("equilibrium state :", fix_point, ", error : ", error)
     
     lyap = lyapunov_exponent(traj, ROSSLER_MAP.jacobian, max_it=Niter, delta_t=delta_t)
-    #empiric_lyap = empiric_lyapounov(traj, max_it=Niter, delta_t=delta_t)
-    print("True Lyapunov Exponents :", lyap, "with delta t =", delta_t)
-    #print("Simulation Lyapunov Exponents :", empiric_lyap, "with delta t =", delta_t)
+    print("Lyapunov Exponents :", lyap, "with delta t =", delta_t)
 
     plt.show()

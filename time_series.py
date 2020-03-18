@@ -13,9 +13,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import datasets
-from torch.autograd import Variable
-from tqdm import tqdm
+#from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -30,8 +28,6 @@ class Rossler_model:
         self.nb_steps = int(10000//self.delta_t)
 
         self.rosler_nn = SpeedNet() #Net()
-        # self.rosler_nn = Net()
-        # state_dict = torch.load('model.pth')
         state_dict = torch.load('SpeedNN_model.pth')
         self.rosler_nn.load_state_dict(state_dict)
 
@@ -43,9 +39,7 @@ class Rossler_model:
         with torch.no_grad():
             list_trajectory = []
             for k in tqdm(range(self.nb_steps)):
-                y, s = self.rosler_nn(x)
-                # y = self.rosler_nn(x)
-                # if k%100 == 0 :
+                y = self.rosler_nn(x)
                 list_trajectory.append(y.detach().numpy().reshape(-1))
                 x = y
 
@@ -80,18 +74,13 @@ if __name__ == '__main__':
     INIT = np.array([-5.75, -1.6,  0.02])
     Niter = ROSSLER.nb_steps
 
-    print(Niter)
     traj,speeds,jacobians,t = ROSSLER_MAP.full_traj(Niter, INIT)
 
     # result_loss = np.sum((traj[::100]-y)**2,axis = 1)
     # plt.plot(range(len(result_loss)),result_loss)
     # plt.show()
 
-    print(np.shape(traj))
-    print(np.shape(y))
-
     y = np.stack(y)
-    # print(y.shape)
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(traj[:,0], traj[:,1], traj[:,2], c = 'b')

@@ -7,23 +7,26 @@ from dtw import *
 from time_series import *
 
 
-def draw_histogram(traj,y):
+def draw_histogram(gt_traj,sim_traj):
+  '''
+  Draws the histogram of the trajectories projected along each dimension.
+  gt_traj is the sampled trajectory, sim_traj the simulated one.
+  '''
   labels=["x","y",'z']
   for i in range(3):
     plt.figure()
-    coord=y[:,i]
-    traj_coord=traj[:,i]
+    sim_coord = sim_traj[:,i]
+    gt_coord = gt_traj[:,i]
 
-    #win_width=np.maximum(np.max(coord),np.max(traj_coord),5)-np.minimum(np.min(coord),np.min(traj_coord))
-    win_width = max(np.max(coord),np.max(traj_coord)) - min(np.min(coord),np.min(traj_coord))
+    win_width = max(np.max(sim_coord),np.max(gt_coord)) - min(np.min(sim_coord),np.min(gt_coord))
     nb_bins=50
 
-    coord=coord[np.where(np.abs(coord)<win_width)]
-    traj_coord=traj_coord[np.where(np.abs(traj_coord)<win_width)]
+    sim_coord = sim_coord[np.where(np.abs(sim_coord)<win_width)]
+    gt_coord=gt_coord[np.where(np.abs(gt_coord)<win_width)]
 
 
-    height,x=np.histogram(coord,bins=nb_bins)
-    height2,x2=np.histogram(traj_coord,bins=nb_bins)
+    height,x=np.histogram(sim_coord,bins=nb_bins)
+    height2,x2=np.histogram(gt_coord,bins=nb_bins)
 
 
     plt.bar(x[:-1],height,width=win_width/nb_bins,color='r',alpha=0.3, label='Simulated')
@@ -36,10 +39,10 @@ def draw_histogram(traj,y):
 
 def joint_distrib(gt_traj, sim_traj, T):
   '''
-  Plots the joint distributions of (w(t),w(t+T)) (for each axis) for w in {traj, y}
+  Plots the joint distributions of (w(t),w(t+T)) (for each axis) for w in {traj, y}.
+  gt_traj is the sampled trajectory, sim_traj the simulated one.
   '''
   labels = ["x","y","z"]
-  #print(len(gt_traj))
   for i in range(3):
     sim_coords = sim_traj[:-T,i]
     gt_coords = gt_traj[:-T,i]
@@ -62,7 +65,8 @@ def joint_distrib(gt_traj, sim_traj, T):
 
 def time_correlations(gt_traj, sim_traj, T_list=[5,10,50,100,200,500,1000]):
   '''
-  Plots for each dimension the evolution of the correlation between w(t) and w(t=T) as T increases
+  Plots for each dimension the evolution of the correlation between w(t) and w(t=T) as T increases.
+  gt_traj is the sampled trajectory, sim_traj the simulated one.
   '''
   labels = ["x", "y", "z"]
   for i in range(3):
@@ -83,58 +87,23 @@ def time_correlations(gt_traj, sim_traj, T_list=[5,10,50,100,200,500,1000]):
     plt.xlabel('T')
     plt.ylabel('Correlation')
     plt.legend()
+
   plt.show()
 
 
-
-def empiric_lyapounov(traj, max_it, delta_t):
+def compare_lyapunov(gt_traj, lyap_exp, sim_traj, delta_t):
   '''
-  Makes no sens so far! Is there really some sense in trying to compute an "empirical Lyapounov"???
+  We compare the evolution of the deviation and its expected bounds.
+  gt_traj is the sampled trajectory, sim_traj the simulated one.
+  lyap_exp should be the highest lyapunov exponent of the physical system.
   '''
-  n = traj.shape[1]
-  w = np.eye(n)
-  rs = []
-  chk = 0
-
-  for i in range(max_it-1):
-      # Estimate the jacobian through finite difference
-      jacob = (traj[i+1,:]-traj[i,:]) / delta_t # Is this the continuous one?
-      #WARNING this is true for the jacobian of the continuous system!
-      # w_next = np.dot(expm(jacob * delta_t),w) 
-      #if delta_t is small you can use:
-      w_next = np.dot(np.eye(n)+jacob * delta_t,w)
-  
-      w_next, r_next = qr(w_next)
-
-      # qr computation from numpy allows negative values in the diagonal
-      # Next three lines to have only positive values in the diagonal
-      d = np.diag(np.sign(r_next.diagonal()))
-      w_next = np.dot(w_next, d)
-      r_next = np.dot(d, r_next.diagonal())
-
-      rs.append(r_next)
-      w = w_next
-      if i//(max_it/100)>chk:
-          #print(i//(max_it/100))
-          chk +=1
-  
-  return  np.mean(np.log(rs), axis=0) / delta_t
-
-def compare_lyapounov(gt_traj, lyap_exp, sim_traj, delta_t):
-  '''
-  We compare the evolution of the deviation and its expected bounds
-  '''
-  print(f'Len of the sequence: {sim_traj.shape[0]}')
   time = np.arange(0, sim_traj.shape[0]*delta_t, delta_t)
-  print('Time shape:', time.shape)
   deviation_norm = np.linalg.norm((sim_traj-gt_traj), axis=1)
-  print('deviation shape:', deviation_norm.shape)
   # Compute e^(lyap*t) for all t
   e_lyap = np.linalg.norm(sim_traj[0]-gt_traj[0]) * np.exp(lyap_exp*np.arange(0, sim_traj.shape[0]*delta_t, delta_t))
-  print('e^lyap shape:', e_lyap.shape)
 
   plt.plot(time, deviation_norm, color='r', label="Simulation deviation")
-  plt.plot(time, e_lyap, color='b', label="Lyapounov evolution")
+  plt.plot(time, e_lyap, color='b', label="Lyapunov evolution")
   plt.legend()
   plt.show()
 
@@ -167,9 +136,8 @@ def plot_traj(gt_traj, sim_traj):
   plt.show()
 
 def dtws(gt_traj, sim_traj):
-  gt_traj=gt_traj[:,0]
-  sim_traj=sim_traj[:,0]
-  alignment = dtw(sim_traj, gt_traj, keep_internals=True)
+  dist_matrix=scipy.spatial.distance_matrix(sim_traj,gt_traj)
+  alignment=dtw(dist_matrix, keep_internals=True)
 
   ## Display the warping curve, i.e. the alignment curve
   alignment.plot(type="alignment")
@@ -182,26 +150,25 @@ def dtws(gt_traj, sim_traj):
 
 if __name__ == '__main__':
     print("Loading... ")
-    # y=np.loadtxt("y_0.01_smoothl1.dat")
     y=np.loadtxt("y_0.01_smoothl1.dat")
-    # y = np.loadtxt('y_0.01_jac.dat')
-    # traj=np.loadtxt("traj_0.01_smoothl1.dat")
     traj=np.loadtxt("traj_0.01_smoothl1.dat")
-    print("DONE")
+    print("Done")
 
-    # plot_traj(traj[:5000],y[:5000])
+    plot_traj(traj[:5000],y[:5000])
     
-    # print("Drawing histograms..")
-    # draw_histogram(traj,y)
-    # print("Done")
+    print("Drawing histograms..")
+    draw_histogram(traj,y)
+    print("Done")
 
+    print("Plotting joint distribution..")
     joint_distrib(traj, y, T=500)
+    print("Done")
     
-    '''print("Drawing time correlation distribution..")
-    time_correlations(traj, y, np.arange(10,10000,50)) # T is chosen at random here, other values should be tested
-    print("Done")'''
+    print("Drawing time correlation distribution..")
+    time_correlations(traj, y, np.arange(10,10000,50))
+    print("Done")
 
-    """# Using model jacobian to compare equilibrium and Lyapunov exponent
+    # Using model jacobian to compare equilibrium and Lyapunov exponent
     Niter = 400000
     delta_t = 1e-2
 
@@ -218,31 +185,13 @@ if __name__ == '__main__':
     
     lyap_gt = lyapunov_exponent(traj, ROSSLER_map.jacobian, max_it=Niter, delta_t=delta_t)
     lyap_sim = lyapunov_exponent(y, ROSSLER_model.jacobian, max_it=Niter, delta_t=delta_t)
-    #empiric_lyap = empiric_lyapounov(traj, max_it=Niter, delta_t=delta_t)
     print("True Lyapunov Exponents :", lyap_gt, "with delta t =", delta_t)
-    print("Simulation Lyapunov Exponents :", lyap_sim, "with delta t =", delta_t)"""
+    print("Simulation Lyapunov Exponents :", lyap_sim, "with delta t =", delta_t)
 
-    # # Right thing to do: compare two generated trajectories (instead of a simulation versus the ground truth)
-    # print("Computing Lyapounov")
-    # ROSSLER_MAP = RosslerMap(delta_t=delta_t)
-    # lyap = lyapunov_exponent(traj, ROSSLER_MAP.jacobian, max_it=Niter, delta_t=delta_t)[0]
-    # print(f'Largest lyapounov coeffiscient of the physical system: {lyap}')
-    # print("Plotting the deivation vs Lyapounov")
-    # # Start after 1 to make sure the starting points are different
-    # compare_lyapounov(traj[10:10000], lyap, y[10:10000], delta_t=delta_t) # We have to focus on the start of the trajectories to avoid overfloat
-    # print("Done")
-
-    '''print(('Computing FFT'))
+    print(('Computing FFT'))
     plot_fourier(traj[:4000], y[:4000])
-    print('Done')'''
+    print('Done')
 
-    '''print("Computing DTW...")
+    print("Computing DTW...")
     dtws(traj[:10000],y[:10000]) #ran on 10000 first steps
     print('Done')
-'''
-#stats intéressantes : max distances entre deux points (au même instant, i.e. erreur de prediction)
-#                     - max min distances, les points des deux surfaces les plus éloignés
-#                     - histogrames
-#                     - time correlations
-#                     - Revisit frequencies
-
