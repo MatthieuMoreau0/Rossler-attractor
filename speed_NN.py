@@ -72,9 +72,11 @@ class SpeedNN_model():
             self.model.train()
             for x,y,s,j in train_loader:
                 #print('x grad 1', x.grad)
+                x_copy = x.clone()
+                #print('x before backprop:', x)
                 if self.lambda_jacob is not None: x.requires_grad = True 
                 #print('x grad 2', x.grad)
-                self.optimizer.zero_grad()
+                #self.optimizer.zero_grad()
                 output, speed = self.model(x)
                 #print('output_shape:', output.shape)
                 loss_out = self.criterion1(output, y)
@@ -104,11 +106,14 @@ class SpeedNN_model():
                     loss += self.lambda_jacob * loss_jacob
                     x.requires_grad = False # remove grad from x to avoid modifying the input
                     list_loss_jac.append(loss_jacob.detach().numpy())
-                print('Computed jacobian:', jacobian)
-                print('Original jacobian:', j)
-
+                    #print('Computed jacobian:', jacobian)
+                    #print('Original jacobian:', j)
+                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+                # Check that the input was not modified when back_propagating
+                #print('x after backprop:', x)
+                #print('Diff:', np.unique(x_copy.detach().numpy()-x.detach().numpy()))
                 list_loss_pos.append(loss_out.detach().numpy())
                 list_loss_speed.append(loss_speed.detach().numpy())
                 list_loss.append(loss.detach().numpy())

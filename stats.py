@@ -1,8 +1,10 @@
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from TP import *
 from rossler_map import *
 from dtw import *
+from time_series import *
 
 
 def draw_histogram(traj,y):
@@ -37,6 +39,7 @@ def joint_distrib(gt_traj, sim_traj, T):
   Plots the joint distributions of (w(t),w(t+T)) (for each axis) for w in {traj, y}
   '''
   labels = ["x","y","z"]
+  #print(len(gt_traj))
   for i in range(3):
     sim_coords = sim_traj[:-T,i]
     gt_coords = gt_traj[:-T,i]
@@ -46,14 +49,14 @@ def joint_distrib(gt_traj, sim_traj, T):
     fig=plt.figure()
 
     ax1 = fig.add_subplot(1,2,1)
-    ax1.hist2d(gt_coords, translat_gt_coords, bins=30)
+    ax1.hist2d(gt_coords, translat_gt_coords, bins=20)
     plt.ylabel(f"{labels[i]}(t+T)")
     plt.xlabel(f"{labels[i]}(t) (true system)")
 
     ax2 = fig.add_subplot(1,2,2)
-    ax2.hist2d(sim_coords, translat_sim_coords, bins=30)
+    ax2.hist2d(sim_coords, translat_sim_coords, bins=20)
     plt.xlabel(f"{labels[i]}(t) (simulation)")
-    fig.suptitle(f"Time correlation for the {labels[i]} coordinate, T={T}")
+    fig.suptitle(f"Joint distribution for the {labels[i]} coordinate, T={T}")
 
   plt.show()
 
@@ -176,29 +179,51 @@ def dtws(gt_traj, sim_traj):
   plt.show()
 
 
+
 if __name__ == '__main__':
     print("Loading... ")
     # y=np.loadtxt("y_0.01_smoothl1.dat")
-    # y=np.loadtxt("y_0.01_smoothl1.dat")
-    y = np.loadtxt('y_0.01_jac.dat')
+    y=np.loadtxt("y_0.01_smoothl1.dat")
+    # y = np.loadtxt('y_0.01_jac.dat')
     # traj=np.loadtxt("traj_0.01_smoothl1.dat")
     traj=np.loadtxt("traj_0.01_smoothl1.dat")
     print("DONE")
 
-    plot_traj(traj,y)
+    # plot_traj(traj[:5000],y[:5000])
     
     # print("Drawing histograms..")
     # draw_histogram(traj,y)
     # print("Done")
+
+    joint_distrib(traj, y, T=500)
     
-    # print("Drawing time correlation distribution..")
-    # time_correlations(traj, y, 100) # T is chosen at random here, other values should be tested
-    # print("Done")
+    '''print("Drawing time correlation distribution..")
+    time_correlations(traj, y, np.arange(10,10000,50)) # T is chosen at random here, other values should be tested
+    print("Done")'''
+
+    """# Using model jacobian to compare equilibrium and Lyapunov exponent
+    Niter = 400000
+    delta_t = 1e-2
+
+    ROSSLER_model = Rossler_model(delta_t)
+    ROSSLER_map = RosslerMap(delta_t=delta_t)
+
+    INIT = np.array([-5.75, -1.6,  0.02])
+    fix_point = newton(ROSSLER_map.v_eq,ROSSLER_map.jacobian,INIT)
+    jac_at_eq = ROSSLER_model.jacobian(torch.tensor(fix_point).float())
+    J = jac_at_eq.copy()
+    jac_at_eq[0,0] = 0
+    constant = np.array([0,0,ROSSLER_map.b])
+    print("Gradient at equilibrium state :", (jac_at_eq-np.eye(3)) @ INIT + constant)
+    
+    lyap_gt = lyapunov_exponent(traj, ROSSLER_map.jacobian, max_it=Niter, delta_t=delta_t)
+    lyap_sim = lyapunov_exponent(y, ROSSLER_model.jacobian, max_it=Niter, delta_t=delta_t)
+    #empiric_lyap = empiric_lyapounov(traj, max_it=Niter, delta_t=delta_t)
+    print("True Lyapunov Exponents :", lyap_gt, "with delta t =", delta_t)
+    print("Simulation Lyapunov Exponents :", lyap_sim, "with delta t =", delta_t)"""
 
     # # Right thing to do: compare two generated trajectories (instead of a simulation versus the ground truth)
     # print("Computing Lyapounov")
-    # Niter = 400000
-    # delta_t = 1e-2
     # ROSSLER_MAP = RosslerMap(delta_t=delta_t)
     # lyap = lyapunov_exponent(traj, ROSSLER_MAP.jacobian, max_it=Niter, delta_t=delta_t)[0]
     # print(f'Largest lyapounov coeffiscient of the physical system: {lyap}')
@@ -207,14 +232,14 @@ if __name__ == '__main__':
     # compare_lyapounov(traj[10:10000], lyap, y[10:10000], delta_t=delta_t) # We have to focus on the start of the trajectories to avoid overfloat
     # print("Done")
 
-    # print(('Computing FFT'))
-    # plot_fourier(traj, y)
-    # print('Done')
+    '''print(('Computing FFT'))
+    plot_fourier(traj[:4000], y[:4000])
+    print('Done')'''
 
-    print("Computing DTW...")
+    '''print("Computing DTW...")
     dtws(traj[:10000],y[:10000]) #ran on 10000 first steps
     print('Done')
-
+'''
 #stats intéressantes : max distances entre deux points (au même instant, i.e. erreur de prediction)
 #                     - max min distances, les points des deux surfaces les plus éloignés
 #                     - histogrames

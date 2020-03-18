@@ -19,7 +19,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from speed_NN import *
-from stats import *
 
 
 class dataset(torch.utils.data.Dataset):
@@ -186,8 +185,8 @@ if __name__ == '__main__':
     datasetTrain = dataset(x_train.astype("float32"),y_train.astype("float32"),s_train.astype("float32"),j_train.astype("float32"))
     datasetVal = dataset(x_val.astype("float32"),y_val.astype("float32"),s_val.astype("float32"),j_val.astype("float32"))
     #model = NN_model()
-    model = SpeedNN_model(lambda_jacob=0.01)
-    model.train(datasetTrain, batch_size=250, epochs=20, shuffle = True, test = datasetVal)
+    model = SpeedNN_model(lambda_jacob=0.1)
+    model.train(datasetTrain, batch_size=250, epochs=10, shuffle = True, test = datasetVal)
     model.save_weight()
 
 

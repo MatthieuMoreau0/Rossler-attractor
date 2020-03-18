@@ -52,18 +52,19 @@ class Rossler_model:
         return list_trajectory
 
     def jacobian(self, input_):
+        input_ = torch.tensor(input_).float()
         input_.requires_grad = True
         output, speed = self.rosler_nn.forward(input_)
 
-        jacobian = np.zeros((3,3))
+        J = np.zeros((3,3))
 
         for i in range(3): # iterate over each output dimension
             dim_score = output[0][i]
             dim_score.backward(retain_graph=True)
             gradients = input_.grad
-            jacobian[i] = gradients.data
+            J[i] = gradients.data
 
-        return jacobian
+        return (J-np.eye(3))/self.delta_t
 
 
     def save_traj(self,y,file):
