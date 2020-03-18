@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-#from tqdm import tqdm
 
 import torch
 import torch.nn as nn
@@ -28,7 +27,7 @@ class Rossler_model:
         self.nb_steps = int(10000//self.delta_t)
 
         self.rosler_nn = SpeedNet() #Net()
-        state_dict = torch.load('SpeedNN_model.pth')
+        state_dict = torch.load('SpeedNN_model_smoothl1_0.01.pth')
         self.rosler_nn.load_state_dict(state_dict)
 
     def full_traj(self,initial_condition=[-5.75, -1.6,  0.02]): 
@@ -48,7 +47,7 @@ class Rossler_model:
     def jacobian(self, input_):
         input_ = torch.tensor(input_).float()
         input_.requires_grad = True
-        output, speed = self.rosler_nn.forward(input_)
+        output = self.rosler_nn.forward(input_)
 
         J = np.zeros((3,3))
 

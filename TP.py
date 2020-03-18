@@ -191,8 +191,8 @@ if __name__ == '__main__':
 
     ### Define and train model ###
 
-    model = SpeedNN_model(lambda_jacob=0.1)
-    model.train(datasetTrain, batch_size=250, epochs=10, shuffle = True, test = datasetVal)
+    model = SpeedNN_model(lambda_jacob=None)
+    model.train(datasetTrain, batch_size=250, epochs=20, shuffle = True, test = datasetVal)
     model.save_weight()
 
     ### Plot the sampled trajectory ###

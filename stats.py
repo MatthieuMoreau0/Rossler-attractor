@@ -183,10 +183,11 @@ if __name__ == '__main__':
     constant = np.array([0,0,ROSSLER_map.b])
     print("Gradient at equilibrium state :", (jac_at_eq-np.eye(3)) @ INIT + constant)
     
-    lyap_gt = lyapunov_exponent(traj, ROSSLER_map.jacobian, max_it=Niter, delta_t=delta_t)
+    # That computation is very long, execute only if necessary
+    '''lyap_gt = lyapunov_exponent(traj, ROSSLER_map.jacobian, max_it=Niter, delta_t=delta_t)
     lyap_sim = lyapunov_exponent(y, ROSSLER_model.jacobian, max_it=Niter, delta_t=delta_t)
     print("True Lyapunov Exponents :", lyap_gt, "with delta t =", delta_t)
-    print("Simulation Lyapunov Exponents :", lyap_sim, "with delta t =", delta_t)
+    print("Simulation Lyapunov Exponents :", lyap_sim, "with delta t =", delta_t)'''
 
     print(('Computing FFT'))
     plot_fourier(traj[:4000], y[:4000])
